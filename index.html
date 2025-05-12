@@ -29,7 +29,7 @@
       <!-- Assets -->
       <a-assets>
         <!-- Models -->
-        <a-asset-item id="crabModel" src="models/crab.glb"></a-asset-item>
+        <a-asset-item id="fishModel" src="models/fish.glb"></a-asset-item>
         <a-asset-item id="ballModel" src="models/beach_ball.glb"></a-asset-item>
         <a-asset-item
           id="umbrellaModel"
@@ -51,10 +51,10 @@
         <audio id="towerSound" src="sounds/umbrella.mp3" preload="auto"></audio>
       </a-assets>
 
-      <!-- crab -->
-      <a-marker type="pattern" url="markers/crab.patt">
+      <!-- fish -->
+      <a-marker type="pattern" url="markers/fish.patt">
         <a-entity
-          gltf-model="#crabModel"
+          gltf-model="#fishModel"
           scale="0.5 0.5 0.5"
           position="0 0 0"
           gesture-detector
@@ -123,7 +123,7 @@
         });
 
         const markerMap = {
-          "crab.patt": "surfSoundEntity",
+          "fish.patt": "surfSoundEntity",
           "beach_ball.patt": "ballSoundEntity",
           "umbrella.patt": "umbrellaSoundEntity",
           "lifeguard_tower.patt": "towerSoundEntity",
