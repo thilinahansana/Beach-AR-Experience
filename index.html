@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Beach AR Experience</title>
+    <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/1.7.2/aframe/build/aframe-ar.min.js"></script>
+    <script src="https://unpkg.com/aframe-gesture-detector@3.3.0/dist/aframe-gesture-detector.min.js"></script>
+
+    <script>
+      AFRAME.registerComponent("rotation-reader", {
+        schema: { default: 1 },
+        init: function () {
+          this.el.addEventListener("dragmove", (event) => {
+            const rotation = this.el.getAttribute("rotation");
+            this.el.setAttribute("rotation", {
+              x: rotation.x,
+              y: rotation.y + event.detail.deltaX * 0.5,
+              z: rotation.z,
+            });
+          });
+        },
+      });
+    </script>
+  </head>
+
+  <body style="margin: 0; overflow: hidden">
+    <a-scene embedded arjs>
+      <!-- Assets -->
+      <a-assets>
+        <!-- Models -->
+        <a-asset-item
+          id="surfboardModel"
+          src="models/surfboard.glb"
+        ></a-asset-item>
+        <a-asset-item id="ballModel" src="models/beach_ball.glb"></a-asset-item>
+        <a-asset-item
+          id="umbrellaModel"
+          src="models/beach_umbrella.glb"
+        ></a-asset-item>
+        <a-asset-item
+          id="towerModel"
+          src="models/lifeguard_tower.glb"
+        ></a-asset-item>
+
+        <!-- Sounds -->
+        <audio id="surfSound" src="sounds/surf.mp3" preload="auto"></audio>
+        <audio id="ballSound" src="sounds/ball.mp3" preload="auto"></audio>
+        <audio
+          id="umbrellaSound"
+          src="sounds/umbrella.mp3"
+          preload="auto"
+        ></audio>
+        <audio id="towerSound" src="sounds/umbrella.mp3" preload="auto"></audio>
+      </a-assets>
+
+      <!-- Surfboard -->
+      <a-marker type="pattern" url="markers/surfboard.patt">
+        <a-entity
+          gltf-model="#surfboardModel"
+          scale="0.5 0.5 0.5"
+          position="0 0 0"
+          gesture-detector
+          rotation-reader
+        ></a-entity>
+        <a-entity id="surfSoundEntity" sound="src: #surfSound"></a-entity>
+      </a-marker>
+
+      <!-- Beach Ball -->
+      <a-marker type="pattern" url="markers/beach_ball.patt">
+        <a-entity
+          gltf-model="#ballModel"
+          scale="0.4 0.4 0.4"
+          position="0 0 0"
+          gesture-detector
+          rotation-reader
+        ></a-entity>
+        <a-entity id="ballSoundEntity" sound="src: #ballSound"></a-entity>
+      </a-marker>
+
+      <!-- Umbrella -->
+      <a-marker type="pattern" url="markers/umbrella.patt">
+        <a-entity
+          gltf-model="#umbrellaModel"
+          scale="0.6 0.6 0.6"
+          position="0 0 0"
+          gesture-detector
+          rotation-reader
+        ></a-entity>
+        <a-entity
+          id="umbrellaSoundEntity"
+          sound="src: #umbrellaSound"
+        ></a-entity>
+      </a-marker>
+
+      <!-- Lifeguard Tower -->
+      <a-marker type="pattern" url="markers/lifeguard_tower.patt">
+        <a-entity
+          gltf-model="#towerModel"
+          scale="0.5 0.5 0.5"
+          position="0 0 0"
+          gesture-detector
+          rotation-reader
+        ></a-entity>
+        <a-entity id="towerSoundEntity" sound="src: #towerSound"></a-entity>
+      </a-marker>
+
+      <!-- Camera -->
+      <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document.body.addEventListener("click", () => {
+          document.querySelectorAll("audio").forEach((audio) => {
+            audio
+              .play()
+              .then(() => {
+                audio.pause();
+                audio.currentTime = 0;
+              })
+              .catch(() => {
+                console.log("User interaction needed for sound");
+              });
+          });
+        });
+
+        const markerMap = {
+          "surfboard.patt": "surfSoundEntity",
+          "beach_ball.patt": "ballSoundEntity",
+          "umbrella.patt": "umbrellaSoundEntity",
+          "lifeguard_tower.patt": "towerSoundEntity",
+        };
+
+        document.querySelectorAll("a-marker").forEach((marker) => {
+          marker.addEventListener("markerFound", () => {
+            const url = marker.getAttribute("url");
+            const fileName = url.split("/").pop();
+            const soundEntityId = markerMap[fileName];
+            const soundEntity = document.getElementById(soundEntityId);
+            if (soundEntity && soundEntity.components.sound) {
+              soundEntity.components.sound.playSound();
+            }
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
