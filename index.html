@@ -67,18 +67,11 @@
       <a-assets>
         <!-- Models -->
         <a-asset-item id="whaleModel" src="models/whale.glb"></a-asset-item>
-        <a-asset-item
-          id="butterflyModel"
-          src="models/butterfly.glb"
-        ></a-asset-item>
+        <a-asset-item id="snakeModel" src="models/snake.glb"></a-asset-item>
 
         <!-- Sounds -->
         <audio id="whaleSound" src="sounds/whale.mp3" preload="auto"></audio>
-        <audio
-          id="butterflySound"
-          src="sounds/eagle.mp3"
-          preload="auto"
-        ></audio>
+        <audio id="snakeSound" src="sounds/eagle.mp3" preload="auto"></audio>
       </a-assets>
 
       <!-- whale -->
@@ -96,9 +89,9 @@
       </a-marker>
 
       <!-- eagle -->
-      <a-marker type="pattern" url="markers/butterfly.patt">
+      <a-marker type="pattern" url="markers/snake.patt">
         <a-entity
-          gltf-model="#butterflyModel"
+          gltf-model="#snakeModel"
           scale="0.4 0.4 0.4"
           position="0 0 0"
           gesture-detector
@@ -106,10 +99,7 @@
           animation-mixer="loop: repeat; timeScale: 1"
           model-animation-controller
         ></a-entity>
-        <a-entity
-          id="butterflySoundEntity"
-          sound="src: #butterflySound"
-        ></a-entity>
+        <a-entity id="snakeSoundEntity" sound="src: #snakeSound"></a-entity>
       </a-marker>
 
       <!-- Camera -->
@@ -135,7 +125,7 @@
 
         const markerMap = {
           "whale.patt": "whaleSoundEntity",
-          "butterfly.patt": "butterflySoundEntity",
+          "snake.patt": "snakeSoundEntity",
         };
 
         document.querySelectorAll("a-marker").forEach((marker) => {
