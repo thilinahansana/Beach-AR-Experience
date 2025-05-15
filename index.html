@@ -29,7 +29,7 @@
       <!-- Assets -->
       <a-assets>
         <!-- Models -->
-        <a-asset-item id="rhinoModel" src="models/rhino.glb"></a-asset-item>
+        <a-asset-item id="whaleModel" src="models/whale.glb"></a-asset-item>
         <a-asset-item id="ballModel" src="models/beach_ball.glb"></a-asset-item>
         <a-asset-item
           id="umbrellaModel"
@@ -51,10 +51,10 @@
         <audio id="towerSound" src="sounds/umbrella.mp3" preload="auto"></audio>
       </a-assets>
 
-      <!-- rhino -->
-      <a-marker type="pattern" url="markers/rhino.patt">
+      <!-- whale -->
+      <a-marker type="pattern" url="markers/whale.patt">
         <a-entity
-          gltf-model="#rhinoModel"
+          gltf-model="#whaleModel"
           scale="0.1 0.1 0.1"
           position="0 0 0"
           gesture-detector
@@ -124,7 +124,7 @@
         });
 
         const markerMap = {
-          "rhino.patt": "surfSoundEntity",
+          "whale.patt": "surfSoundEntity",
           "beach_ball.patt": "ballSoundEntity",
           "umbrella.patt": "umbrellaSoundEntity",
           "lifeguard_tower.patt": "towerSoundEntity",
