@@ -23,27 +23,52 @@
         },
       });
 
-      // Custom component to control animations
-      AFRAME.registerComponent("whale-animation-controller", {
+      // Generic animation controller that can be used for any model
+      AFRAME.registerComponent("model-animation-controller", {
+        schema: {
+          animationName: { type: "string", default: "" },
+          autoPlay: { type: "boolean", default: true },
+        },
+
         init: function () {
           // Store reference to the model entity
-          this.whaleModel = this.el;
+          this.modelEntity = this.el;
           this.animationMixer = null;
+          this.modelName = this.data.animationName || "model";
 
           // Wait for model to load before setting up animations
-          this.whaleModel.addEventListener("model-loaded", () => {
-            console.log("Whale model loaded");
+          this.modelEntity.addEventListener("model-loaded", () => {
+            console.log(`${this.modelName} model loaded`);
 
             // Get the animation mixer component
-            this.animationMixer = this.whaleModel.components["animation-mixer"];
+            this.animationMixer =
+              this.modelEntity.components["animation-mixer"];
 
             if (this.animationMixer) {
-              console.log("Animation mixer found!");
+              console.log(`Animation mixer found for ${this.modelName}!`);
 
-              // If your model has named animations, you can access them by name
-              // this.animationMixer.playAnimation("swim");
+              // Auto-play animation if configured
+              if (this.data.autoPlay) {
+                setTimeout(() => {
+                  this.animationMixer.playAll();
+                  console.log(`Auto-playing ${this.modelName} animations`);
+                }, 100);
+              }
+
+              // List available animations if any
+              const mixer = this.animationMixer.mixer;
+              if (mixer && mixer._actions && mixer._actions.length > 0) {
+                console.log(
+                  `${this.modelName} has ${mixer._actions.length} animations`
+                );
+                mixer._actions.forEach((action, index) => {
+                  console.log(`Animation ${index}: ${action._clip.name}`);
+                });
+              }
             } else {
-              console.warn("No animation-mixer found on the whale model");
+              console.warn(
+                `No animation-mixer found on the ${this.modelName} model`
+              );
             }
           });
 
@@ -51,12 +76,24 @@
           this.el.addEventListener("click", () => {
             if (this.animationMixer) {
               if (this.animationMixer.isPlaying) {
+                console.log(`Stopping ${this.modelName} animations`);
                 this.animationMixer.stopAll();
               } else {
+                console.log(`Playing ${this.modelName} animations`);
                 this.animationMixer.playAll();
               }
             }
           });
+        },
+
+        // Method to play a specific animation if available
+        playAnimation: function (animName) {
+          if (this.animationMixer && animName) {
+            console.log(
+              `Attempting to play ${animName} animation for ${this.modelName}`
+            );
+            this.animationMixer.playAnimation(animName);
+          }
         },
       });
     </script>
@@ -68,25 +105,11 @@
       <a-assets>
         <!-- Models -->
         <a-asset-item id="whaleModel" src="models/whale.glb"></a-asset-item>
-        <a-asset-item id="ballModel" src="models/beach_ball.glb"></a-asset-item>
-        <a-asset-item
-          id="umbrellaModel"
-          src="models/beach_umbrella.glb"
-        ></a-asset-item>
-        <a-asset-item
-          id="towerModel"
-          src="models/lifeguard_tower.glb"
-        ></a-asset-item>
+        <a-asset-item id="eagleModel" src="models/eagel.glb"></a-asset-item>
 
         <!-- Sounds -->
-        <audio id="surfSound" src="sounds/surf.mp3" preload="auto"></audio>
-        <audio id="ballSound" src="sounds/ball.mp3" preload="auto"></audio>
-        <audio
-          id="umbrellaSound"
-          src="sounds/umbrella.mp3"
-          preload="auto"
-        ></audio>
-        <audio id="towerSound" src="sounds/umbrella.mp3" preload="auto"></audio>
+        <audio id="whaleSound" src="sounds/whale.mp3" preload="auto"></audio>
+        <audio id="eagleSound" src="sounds/eagle.mp3" preload="auto"></audio>
       </a-assets>
 
       <!-- whale -->
@@ -98,48 +121,23 @@
           gesture-detector
           rotation-reader
           animation-mixer="loop: repeat; timeScale: 1"
-          whale-animation-controller
+          model-animation-controller="animationName: whale; autoPlay: true"
         ></a-entity>
-        <a-entity id="surfSoundEntity" sound="src: #surfSound"></a-entity>
+        <a-entity id="whaleSoundEntity" sound="src: #whaleSound"></a-entity>
       </a-marker>
 
-      <!-- Beach Ball -->
-      <a-marker type="pattern" url="markers/beach_ball.patt">
+      <!-- eagle -->
+      <a-marker type="pattern" url="markers/eagle.patt">
         <a-entity
-          gltf-model="#ballModel"
+          gltf-model="#eagleModel"
           scale="0.4 0.4 0.4"
           position="0 0 0"
           gesture-detector
           rotation-reader
+          animation-mixer="loop: repeat; timeScale: 1; clampWhenFinished: true"
+          model-animation-controller="animationName: eagle; autoPlay: true"
         ></a-entity>
-        <a-entity id="ballSoundEntity" sound="src: #ballSound"></a-entity>
-      </a-marker>
-
-      <!-- Umbrella -->
-      <a-marker type="pattern" url="markers/umbrella.patt">
-        <a-entity
-          gltf-model="#umbrellaModel"
-          scale="0.6 0.6 0.6"
-          position="0 0 0"
-          gesture-detector
-          rotation-reader
-        ></a-entity>
-        <a-entity
-          id="umbrellaSoundEntity"
-          sound="src: #umbrellaSound"
-        ></a-entity>
-      </a-marker>
-
-      <!-- Lifeguard Tower -->
-      <a-marker type="pattern" url="markers/lifeguard_tower.patt">
-        <a-entity
-          gltf-model="#towerModel"
-          scale="0.5 0.5 0.5"
-          position="0 0 0"
-          gesture-detector
-          rotation-reader
-        ></a-entity>
-        <a-entity id="towerSoundEntity" sound="src: #towerSound"></a-entity>
+        <a-entity id="eagleSoundEntity" sound="src: #eagleSound"></a-entity>
       </a-marker>
 
       <!-- Camera -->
@@ -148,6 +146,7 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
+        // Initialize audio system on first user interaction
         document.body.addEventListener("click", () => {
           document.querySelectorAll("audio").forEach((audio) => {
             audio
@@ -162,52 +161,66 @@
           });
         });
 
+        // Map markers to their sound entities
         const markerMap = {
-          "whale.patt": "surfSoundEntity",
-          "beach_ball.patt": "ballSoundEntity",
-          "umbrella.patt": "umbrellaSoundEntity",
-          "lifeguard_tower.patt": "towerSoundEntity",
+          "whale.patt": "whaleSoundEntity",
+          "eagle.patt": "eagleSoundEntity",
         };
 
+        // Handle marker detection and events
         document.querySelectorAll("a-marker").forEach((marker) => {
+          // Play sound when marker is found
           marker.addEventListener("markerFound", () => {
             const url = marker.getAttribute("url");
             const fileName = url.split("/").pop();
             const soundEntityId = markerMap[fileName];
             const soundEntity = document.getElementById(soundEntityId);
+
             if (soundEntity && soundEntity.components.sound) {
               soundEntity.components.sound.playSound();
             }
-          });
 
-          // Auto-play animation when marker is found
-          marker.addEventListener("markerFound", () => {
-            const url = marker.getAttribute("url");
-            const fileName = url.split("/").pop();
+            // Get model entity when marker is found
+            const modelEntity = marker.querySelector("[animation-mixer]");
+            if (modelEntity) {
+              // Store reference to animation controller
+              const modelController =
+                modelEntity.components["model-animation-controller"];
 
-            if (fileName === "whale.patt") {
-              const whaleEntity = marker.querySelector("[animation-mixer]");
-              if (whaleEntity && whaleEntity.components["animation-mixer"]) {
-                console.log("Starting whale animation");
-                whaleEntity.components["animation-mixer"].playAll();
+              if (modelController) {
+                // You can play specific animations by name if they exist
+                // For example, if you know your eagle has a "fly" animation:
+                // if (fileName === "eagle.patt") {
+                //   modelController.playAnimation("fly");
+                // }
+                // Or for the whale:
+                // if (fileName === "whale.patt") {
+                //   modelController.playAnimation("swim");
+                // }
               }
             }
           });
 
-          // Pause animation when marker is lost
+          // Handle marker lost event
           marker.addEventListener("markerLost", () => {
             const url = marker.getAttribute("url");
             const fileName = url.split("/").pop();
+            const modelEntity = marker.querySelector("[animation-mixer]");
 
-            if (fileName === "whale.patt") {
-              const whaleEntity = marker.querySelector("[animation-mixer]");
-              if (whaleEntity && whaleEntity.components["animation-mixer"]) {
-                console.log("Pausing whale animation");
-                // Optionally, you can pause the animation instead of stopping it
-                // whaleEntity.components["animation-mixer"].pauseAll();
-              }
+            if (modelEntity && modelEntity.components["animation-mixer"]) {
+              // Optionally pause animations when marker is lost
+              // Uncomment this if you want animations to pause when marker disappears
+              // modelEntity.components["animation-mixer"].pauseAll();
+
+              console.log(`Marker lost: ${fileName}`);
             }
           });
+        });
+
+        // Log when scene is ready
+        const scene = document.querySelector("a-scene");
+        scene.addEventListener("loaded", function () {
+          console.log("AR scene fully loaded");
         });
       });
     </script>
