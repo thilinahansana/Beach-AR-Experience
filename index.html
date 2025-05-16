@@ -66,26 +66,26 @@
       <!-- Assets -->
       <a-assets>
         <!-- Models -->
-        <a-asset-item id="elkModel" src="models/elk.glb"></a-asset-item>
+        <a-asset-item id="whaleModel" src="models/whale.glb"></a-asset-item>
         <a-asset-item id="catModel" src="models/cat.glb"></a-asset-item>
 
         <!-- Sounds -->
-        <audio id="elkSound" src="sounds/elk.mp3" preload="auto"></audio>
+        <audio id="whaleSound" src="sounds/whale.mp3" preload="auto"></audio>
         <audio id="catSound" src="sounds/cat.mp3" preload="auto"></audio>
       </a-assets>
 
-      <!-- elk -->
-      <a-marker type="pattern" url="markers/elk.patt">
+      <!-- whale -->
+      <a-marker type="pattern" url="markers/whale.patt">
         <a-entity
-          gltf-model="#elkModel"
-          scale="1 1 1"
+          gltf-model="#whaleModel"
+          scale="2 2 2"
           position="0 0 0"
           gesture-detector
           rotation-reader
           animation-mixer="loop: repeat; timeScale: 1"
           model-animation-controller
         ></a-entity>
-        <a-entity id="elkSoundEntity" sound="src: #elkSound"></a-entity>
+        <a-entity id="whaleSoundEntity" sound="src: #whaleSound"></a-entity>
       </a-marker>
 
       <!-- cat -->
@@ -124,7 +124,7 @@
         });
 
         const markerMap = {
-          "elk.patt": "elkSoundEntity",
+          "whale.patt": "whaleSoundEntity",
           "cat.patt": "catSoundEntity",
         };
 
