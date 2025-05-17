@@ -58,6 +58,58 @@
           });
         },
       });
+
+      // Custom component for looping sounds
+      AFRAME.registerComponent("looping-sound", {
+        schema: {
+          src: { type: "string" },
+          autoplay: { type: "boolean", default: false },
+          volume: { type: "number", default: 1.0 },
+          loop: { type: "boolean", default: true },
+        },
+        init: function () {
+          this.audio = new Audio(this.data.src);
+          this.audio.volume = this.data.volume;
+          this.audio.loop = this.data.loop;
+
+          if (this.data.autoplay) {
+            // We'll try to play on init, but it will likely fail due to browser policies
+            this.attemptAutoplay();
+          }
+
+          // Add methods to be called from outside
+          this.playSound = this.playSound.bind(this);
+          this.pauseSound = this.pauseSound.bind(this);
+        },
+
+        attemptAutoplay: function () {
+          this.audio.play().catch((error) => {
+            console.log(
+              "Autoplay prevented by browser policy, will play on user interaction"
+            );
+          });
+        },
+
+        playSound: function () {
+          // Reset the sound to the beginning if it's already playing
+          if (!this.audio.paused) {
+            this.audio.currentTime = 0;
+          } else {
+            this.audio.play().catch((error) => {
+              console.warn("Error playing sound:", error);
+            });
+          }
+        },
+
+        pauseSound: function () {
+          this.audio.pause();
+        },
+
+        remove: function () {
+          this.pauseSound();
+          this.audio = null;
+        },
+      });
     </script>
   </head>
 
@@ -75,7 +127,7 @@
       </a-assets>
 
       <!-- whale -->
-      <a-marker type="pattern" url="markers/whale.patt">
+      <a-marker type="pattern" url="markers/whale.patt" id="whaleMarker">
         <a-entity
           gltf-model="#whaleModel"
           scale="2 2 2"
@@ -85,11 +137,14 @@
           animation-mixer="loop: repeat; timeScale: 1"
           model-animation-controller
         ></a-entity>
-        <a-entity id="whaleSoundEntity" sound="src: #whaleSound"></a-entity>
+        <a-entity
+          id="whaleSoundEntity"
+          looping-sound="src: sounds/whale.mp3; loop: true; volume: 1.0"
+        ></a-entity>
       </a-marker>
 
       <!-- cat -->
-      <a-marker type="pattern" url="markers/cat.patt">
+      <a-marker type="pattern" url="markers/cat.patt" id="catMarker">
         <a-entity
           gltf-model="#catModel"
           scale="1 1 1"
@@ -99,64 +154,143 @@
           animation-mixer="loop: repeat; timeScale: 1"
           model-animation-controller
         ></a-entity>
-        <a-entity id="catSoundEntity" sound="src: #catSound"></a-entity>
+        <a-entity
+          id="catSoundEntity"
+          looping-sound="src: sounds/cat.mp3; loop: true; volume: 1.0"
+        ></a-entity>
       </a-marker>
 
       <!-- Camera -->
       <a-entity camera></a-entity>
     </a-scene>
 
+    <div
+      style="
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 999;
+      "
+    >
+      Tap anywhere to enable sound
+    </div>
+
     <script>
+      // Audio context to handle sound initialization
+      let audioContext;
+
+      // Flag to track if audio has been initialized
+      let audioInitialized = false;
+
+      // Initialize audio on first user interaction
+      function initializeAudio() {
+        if (audioInitialized) return;
+
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        audioInitialized = true;
+
+        // Remove the instruction once audio is initialized
+        const instructionDiv = document.querySelector("div");
+        if (instructionDiv) {
+          instructionDiv.style.display = "none";
+        }
+
+        console.log("Audio initialized successfully!");
+      }
+
       document.addEventListener("DOMContentLoaded", function () {
-        // Initialize audio on first user interaction
-        document.body.addEventListener("click", () => {
-          document.querySelectorAll("audio").forEach((audio) => {
-            audio
-              .play()
-              .then(() => {
-                audio.pause();
-                audio.currentTime = 0;
-              })
-              .catch(() => {
-                console.log("User interaction needed for sound");
-              });
-          });
+        // Setup for first user interaction to initialize audio
+        document.body.addEventListener(
+          "click",
+          function () {
+            initializeAudio();
+          },
+          { once: false }
+        );
+
+        document.body.addEventListener(
+          "touchstart",
+          function () {
+            initializeAudio();
+          },
+          { once: false }
+        );
+
+        // Configure marker behaviors
+        const whaleMarker = document.getElementById("whaleMarker");
+        const catMarker = document.getElementById("catMarker");
+
+        // Whale marker events
+        whaleMarker.addEventListener("markerFound", function () {
+          console.log("Whale marker found");
+          if (audioInitialized) {
+            const whaleSoundEntity =
+              document.getElementById("whaleSoundEntity");
+            if (
+              whaleSoundEntity &&
+              whaleSoundEntity.components["looping-sound"]
+            ) {
+              whaleSoundEntity.components["looping-sound"].playSound();
+            }
+          }
+
+          // Start animation
+          const whaleModel = whaleMarker.querySelector("[animation-mixer]");
+          if (whaleModel && whaleModel.components["animation-mixer"]) {
+            whaleModel.components["animation-mixer"].playAll();
+          }
         });
 
-        const markerMap = {
-          "whale.patt": "whaleSoundEntity",
-          "cat.patt": "catSoundEntity",
-        };
+        whaleMarker.addEventListener("markerLost", function () {
+          console.log("Whale marker lost");
+          const whaleSoundEntity = document.getElementById("whaleSoundEntity");
+          if (
+            whaleSoundEntity &&
+            whaleSoundEntity.components["looping-sound"]
+          ) {
+            whaleSoundEntity.components["looping-sound"].pauseSound();
+          }
 
-        document.querySelectorAll("a-marker").forEach((marker) => {
-          marker.addEventListener("markerFound", () => {
-            const url = marker.getAttribute("url");
-            const fileName = url.split("/").pop();
-            const soundEntityId = markerMap[fileName];
-            const soundEntity = document.getElementById(soundEntityId);
-            if (soundEntity && soundEntity.components.sound) {
-              soundEntity.components.sound.playSound();
+          // Pause animation
+          const whaleModel = whaleMarker.querySelector("[animation-mixer]");
+          if (whaleModel && whaleModel.components["animation-mixer"]) {
+            whaleModel.components["animation-mixer"].pauseAll();
+          }
+        });
+
+        // Cat marker events
+        catMarker.addEventListener("markerFound", function () {
+          console.log("Cat marker found");
+          if (audioInitialized) {
+            const catSoundEntity = document.getElementById("catSoundEntity");
+            if (catSoundEntity && catSoundEntity.components["looping-sound"]) {
+              catSoundEntity.components["looping-sound"].playSound();
             }
+          }
 
-            // Start animation when marker is found
-            const modelEntity = marker.querySelector("[animation-mixer]");
-            if (modelEntity && modelEntity.components["animation-mixer"]) {
-              console.log(`Starting ${fileName} animation`);
-              modelEntity.components["animation-mixer"].playAll();
-            }
-          });
+          // Start animation
+          const catModel = catMarker.querySelector("[animation-mixer]");
+          if (catModel && catModel.components["animation-mixer"]) {
+            catModel.components["animation-mixer"].playAll();
+          }
+        });
 
-          // Pause animation when marker is lost
-          marker.addEventListener("markerLost", () => {
-            const url = marker.getAttribute("url");
-            const fileName = url.split("/").pop();
+        catMarker.addEventListener("markerLost", function () {
+          console.log("Cat marker lost");
+          const catSoundEntity = document.getElementById("catSoundEntity");
+          if (catSoundEntity && catSoundEntity.components["looping-sound"]) {
+            catSoundEntity.components["looping-sound"].pauseSound();
+          }
 
-            const modelEntity = marker.querySelector("[animation-mixer]");
-            if (modelEntity && modelEntity.components["animation-mixer"]) {
-              console.log(`Pausing ${fileName} animation`);
-              modelEntity.components["animation-mixer"].pauseAll();
-            }
-          });
+          // Pause animation
+          const catModel = catMarker.querySelector("[animation-mixer]");
+          if (catModel && catModel.components["animation-mixer"]) {
+            catModel.components["animation-mixer"].pauseAll();
+          }
         });
       });
     </script>
